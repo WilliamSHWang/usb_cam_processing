@@ -1,0 +1,12 @@
+<launch>
+
+    <node name="usb_cam" pkg="usb_cam" type="usb_cam_node">
+        <param name="video_device" value="/dev/video1" />
+        <param name="pixel_format" value="yuyv" />
+        <param name="camera_name" value="tracker_camera" />
+    </node>
+
+    <node name="my_img_processor" pkg="usb_cam_processing" type="cv_processing.py" />
+
+
+</launch>
