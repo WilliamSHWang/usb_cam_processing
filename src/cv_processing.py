@@ -5,6 +5,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
 import numpy as np
+from usb_cam_processing.msg import Centroid
 
 def nothing(x):
     pass
@@ -30,7 +31,7 @@ class image_converter:
         # cv2.createTrackbar('R',cv_image,0,255,nothing)
 
         lower_blue = np.array([110,50,50]) # 110, 50, 50
-        upper_blue = np.array([155,255,255]) # 130,255,255
+        upper_blue = np.array([130,255,255]) # 130,255,255
         hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv, lower_blue, upper_blue)
         res = cv2.bitwise_and(cv_image,cv_image, mask= mask)
@@ -38,7 +39,7 @@ class image_converter:
         # More stuff for finding the shape
         erode = cv2.erode(mask, None, iterations=2)
         dilate = cv2.dilate(erode, None, iterations=2)
-        _, contours, _ = cv2.findContours(dilate, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        _, contours, _ = cv2.findContours(mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
         h_max = 0
         x_max = 0
@@ -53,7 +54,7 @@ class image_converter:
                 w_max = w
 
 
-        cv2.rectangle(cv_image, (x_max, y_max), (x_max + w_max, y_max + h_max), [0, 0, 255], 2)
+        # cv2.rectangle(cv_image, (x_max, y_max), (x_max + w_max, y_max + h_max), [0, 0, 255], 2)
 
         cv2.circle(cv_image, (x_max + w_max/2, y_max + h_max/2), 7, [255,255,255], -1)
 
@@ -61,6 +62,12 @@ class image_converter:
         cv2.imshow("Res window", dilate)
         cv2.waitKey(1)
 
+        # Publish the position of the ball to a rostopic
+        print x_max, y_max
+        height, width = cv_image.shape[:2]
+        pub = rospy.Publisher('/ball_center', Centroid, queue_size = 10)
+        msg = [x_max, y_max, width, height]
+        pub.publish(x_max, y_max, width, height)
 
 
 
